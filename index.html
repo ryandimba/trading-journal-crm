@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading CRM & Journal System</title>
+    <style>
+        :root {
+            --bg-color: #121826;
+            --card-bg: #1b2333;
+            --accent-color: #2563eb;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #2d3748;
+            --green: #10b981;
+            --red: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1, h2, h3 { color: #ffffff; margin-top: 0; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            background-color: #0f172a;
+            color: #fff;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        /* Scoring Indicator */
+        .score-box {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            background: #0f172a;
+        }
+
+        /* Metrics Table */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        th { background-color: #0f172a; color: var(--text-muted); }
+
+        .img-preview {
+            max-width: 80px;
+            max-height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .metric-card {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .win { color: var(--green); }
+        .loss { color: var(--red); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📈 Trading CRM & Performance Journal</h1>
+
+    <!-- TOP ROW: Mindset & Entry Scoring -->
+    <div class="grid-2">
+        <!-- 1. Trading Plan & Mindset -->
+        <div class="card">
+            <h2>🎯 Trading Plan & Purpose</h2>
+            <label>Why I Became a Trader:</label>
+            <textarea id="reasonsText" rows="3" placeholder="e.g., Financial freedom, building discipline, supporting family..."></textarea>
+            
+            <label>Core Rules & Strategy Notes:</label>
+            <textarea id="planText" rows="3" placeholder="e.g., Risk max 1% per trade. Never chase trades..."></textarea>
+            <button onclick="savePlan()">Save Plan</button>
+        </div>
+
+        <!-- 2. Weighted Scoring Checklist (XAU/USD Setup) -->
+        <div class="card">
+            <h2>⚖️ XAU / Trade Scoring Setup (0-10)</h2>
+            <form id="scoringForm">
+                <label><input type="checkbox" value="2" class="score-check"> Higher Timeframe Trend Alignment (+2)</label>
+                <label><input type="checkbox" value="2" class="score-check"> Major Support/Resistance Level (+2)</label>
+                <label><input type="checkbox" value="2" class="score-check"> Candlestick Rejection Pattern (+2)</label>
+                <label><input type="checkbox" value="2" class="score-check"> Risk-to-Reward Ratio > 1:2 (+2)</label>
+                <label><input type="checkbox" value="1" class="score-check"> Clean Session / Low News Risk (+1)</label>
+                <label><input type="checkbox" value="1" class="score-check"> High Confidence / Mindset Clear (+1)</label>
+            </form>
+            <div id="scoreDisplay" class="score-box">Score: 0 / 10</div>
+        </div>
+    </div>
+
+    <!-- ANALYTICS DASHBOARD -->
+    <div class="card">
+        <h2>📊 Gauge Performance Analytics</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+            <div class="metric-card">
+                <div>Total Trades</div>
+                <div id="totalTrades" class="metric-value">0</div>
+            </div>
+            <div class="metric-card">
+                <div>Win Rate</div>
+                <div id="winRate" class="metric-value">0%</div>
+            </div>
+            <div class="metric-card">
+                <div>Total P/L ($)</div>
+                <div id="totalPL" class="metric-value">$0.00</div>
+            </div>
+            <div class="metric-card">
+                <div>Weekly P/L</div>
+                <div id="weeklyPL" class="metric-value">$0.00</div>
+            </div>
+            <div class="metric-card">
+                <div>Monthly P/L</div>
+                <div id="monthlyPL" class="metric-value">$0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENTRY FORM -->
+    <div class="card">
+        <h2>📝 Record New Trade Entry</h2>
+        <form id="tradeForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+            <div>
+                <label>Open Date</label>
+                <input type="date" id="tradeDate" required>
+            </div>
+            <div>
+                <label>Currency Pair / Asset</label>
+                <input type="text" id="pair" placeholder="e.g. XAU/USD" value="XAU/USD" required>
+            </div>
+            <div>
+                <label>Direction</label>
+                <select id="direction">
+                    <option value="BUY">BUY / Long</option>
+                    <option value="SELL">SELL / Short</option>
+                </select>
+            </div>
+            <div>
+                <label>Confidence Level</label>
+                <select id="confidence">
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+            <div>
+                <label>Entry Price</label>
+                <input type="number" step="any" id="entryPrice" placeholder="0.00" required>
+            </div>
+            <div>
+                <label>Exit Price</label>
+                <input type="number" step="any" id="exitPrice" placeholder="0.00" required>
+            </div>
+            <div>
+                <label>Profit / Loss ($)</label>
+                <input type="number" step="any" id="plAmount" placeholder="e.g. 150 or -50" required>
+            </div>
+            <div style="grid-column: span 2;">
+                <label>Chart Image URL (Looks inside / previewed)</label>
+                <input type="url" id="imageUrl" placeholder="https://via.placeholder.com/150 or TradingView link">
+            </div>
+            <div style="grid-column: 1 / -1;">
+                <button type="submit">Add Trade Record</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SPREADSHEET TABLE -->
+    <div class="card">
+        <h2>📑 Trade Journal Spreadsheet</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Pair</th>
+                        <th>Direction</th>
+                        <th>Confidence</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>P/L ($)</th>
+                        <th>Chart Preview</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tradeTableBody">
+                    <!-- Dynamic Content -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Local Data Storage
+    let trades = JSON.parse(localStorage.getItem('crm_trades')) || [];
+
+    // Load Plan Details
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('reasonsText').value = localStorage.getItem('crm_reasons') || '';
+        document.getElementById('planText').value = localStorage.getItem('crm_plan') || '';
+        document.getElementById('tradeDate').valueAsDate = new Date();
+        renderTrades();
+    });
+
+    // Save Trading Plan
+    function savePlan() {
+        localStorage.setItem('crm_reasons', document.getElementById('reasonsText').value);
+        localStorage.setItem('crm_plan', document.getElementById('planText').value);
+        alert('Trading plan and reasons saved!');
+    }
+
+    // Dynamic Weighted Score Calculation
+    const checkboxes = document.querySelectorAll('.score-check');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+
+    checkboxes.forEach(box => {
+        box.addEventListener('change', () => {
+            let totalScore = 0;
+            checkboxes.forEach(c => {
+                if(c.checked) totalScore += parseInt(c.value);
+            });
+            scoreDisplay.innerText = `Score: ${totalScore} / 10`;
+            scoreDisplay.style.color = totalScore >= 7 ? '#10b981' : (totalScore >= 5 ? '#f59e0b' : '#ef4444');
+        });
+    });
+
+    // Handle Form Submission
+    document.getElementById('tradeForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const newTrade = {
+            id: Date.now(),
+            date: document.getElementById('tradeDate').value,
+            pair: document.getElementById('pair').value,
+            direction: document.getElementById('direction').value,
+            confidence: document.getElementById('confidence').value,
+            entry: parseFloat(document.getElementById('entryPrice').value),
+            exit: parseFloat(document.getElementById('exitPrice').value),
+            pl: parseFloat(document.getElementById('plAmount').value),
+            imageUrl: document.getElementById('imageUrl').value || 'https://via.placeholder.com/150?text=No+Image'
+        };
+
+        trades.push(newTrade);
+        localStorage.setItem('crm_trades', JSON.stringify(trades));
+        renderTrades();
+        document.getElementById('tradeForm').reset();
+        document.getElementById('tradeDate').valueAsDate = new Date();
+    });
+
+    // Delete Trade
+    function deleteTrade(id) {
+        trades = trades.filter(t => t.id !== id);
+        localStorage.setItem('crm_trades', JSON.stringify(trades));
+        renderTrades();
+    }
+
+    // Render Table and Recalculate Metrics (Weekly/Monthly/Yearly)
+    function renderTrades() {
+        const tbody = document.getElementById('tradeTableBody');
+        tbody.innerHTML = '';
+
+        let totalPL = 0;
+        let weeklyPL = 0;
+        let monthlyPL = 0;
+        let wins = 0;
+
+        const now = new Date();
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        trades.forEach(trade => {
+            totalPL += trade.pl;
+            if (trade.pl > 0) wins++;
+
+            const tradeDate = new Date(trade.date);
+            if (tradeDate >= oneWeekAgo) weeklyPL += trade.pl;
+            if (tradeDate.getMonth() === currentMonth && tradeDate.getFullYear() === currentYear) {
+                monthlyPL += trade.pl;
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${trade.date}</td>
+                <td><b>${trade.pair}</b></td>
+                <td style="color:${trade.direction === 'BUY' ? '#10b981' : '#ef4444'}">${trade.direction}</td>
+                <td>${trade.confidence}</td>
+                <td>${trade.entry}</td>
+                <td>${trade.exit}</td>
+                <td class="${trade.pl >= 0 ? 'win' : 'loss'}">$${trade.pl.toFixed(2)}</td>
+                <td>
+                    <a href="${trade.imageUrl}" target="_blank">
+                        <img src="${trade.imageUrl}" class="img-preview" alt="Chart" onerror="this.src='https://via.placeholder.com/80?text=No+Image'">
+                    </a>
+                </td>
+                <td><button style="background:#ef4444; padding: 4px 8px;" onclick="deleteTrade(${trade.id})">X</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Update Gauges & Metrics
+        document.getElementById('totalTrades').innerText = trades.length;
+        document.getElementById('winRate').innerText = trades.length ? `${((wins / trades.length) * 100).toFixed(1)}%` : '0%';
+        document.getElementById('totalPL').innerText = `$${totalPL.toFixed(2)}`;
+        document.getElementById('weeklyPL').innerText = `$${weeklyPL.toFixed(2)}`;
+        document.getElementById('monthlyPL').innerText = `$${monthlyPL.toFixed(2)}`;
+    }
+</script>
+
+</body>
+</html>
